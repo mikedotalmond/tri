@@ -24,7 +24,7 @@ import flash.text.TextField;
 import flash.text.TextFormat;
 
 
-class Stats extends Sprite {	
+@:final class Stats extends Sprite {	
 
 	static inline var GRAPH_WIDTH : Int = 70;
 	static inline var XPOS : Int = 69;//width - 1

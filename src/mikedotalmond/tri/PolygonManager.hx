@@ -13,7 +13,7 @@ import mikedotalmond.tri.geom.Vector;
 import mikedotalmond.tri.Polygon;
 
 
-class PolygonManager {
+@:final class PolygonManager {
 	
 	public static inline var floatsPerVertex:Int = 7;
 	

@@ -5,7 +5,7 @@ package mikedotalmond.tri.geom;
  * @author Mike Almond - https://github.com/mikedotalmond
  */
 
-class Utils {
+@:final class Utils {
 
 	
 	public static inline function lerp(a:Float, b:Float, f:Float):Float {

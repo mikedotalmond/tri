@@ -64,7 +64,7 @@ import net.hires.debug.Stats;
 }
 
 
-class Test {
+@:final class Test {
 
 	var stage 		: Stage;
 	var stage3D 	: Stage3D;
