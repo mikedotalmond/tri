@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<application xmlns="http://ns.adobe.com/air/application/3.4">
+  <id>mikedotalmond.experiment.tri</id>
+  <versionNumber>1.0</versionNumber>
+  <filename>tri</filename>
+  <name>tri</name>
+  <initialWindow>
+    <title>tri</title>
+    <content>triair.swf</content>
+    <systemChrome>standard</systemChrome>
+    <transparent>false</transparent>
+    <visible>true</visible>
+    <minimizable>true</minimizable>
+    <maximizable>true</maximizable>
+    <resizable>true</resizable>
+    <renderMode>direct</renderMode>
+    <aspectRatio>landscape</aspectRatio>
+    <autoOrients>true</autoOrients>
+    <fullScreen>true</fullScreen>
+  </initialWindow>
+  <!-- 
+	More options:
+	http://livedocs.adobe.com/flex/3/html/File_formats_1.html#1043413
+	-->
+  <supportedProfiles>desktop mobileDevice</supportedProfiles>
+  <allowBrowserInvocation>false</allowBrowserInvocation>
+  <customUpdateUI>false</customUpdateUI>
+  <android>
+    <manifestAdditions><![CDATA[<manifest android:installLocation="preferExternal">
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.WAKE_LOCK" />
+	<application android:allowClearUserData="true" android:enabled="true" android:persistent="true" />
+</manifest>]]></manifestAdditions>
+  </android>
+</application>
