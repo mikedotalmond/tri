@@ -58,6 +58,8 @@ import mikedotalmond.tri.Polygon;
 	public function alloc( c : Context3D ) {
 		disposeBuffers();
 		
+		polygons.fixed = true;
+		
 		ibuf = c.createIndexBuffer(idx.length >> 1);
 		ibuf.uploadFromByteArray(idx, 0, 0, idx.length >> 1);
 		
@@ -95,13 +97,6 @@ import mikedotalmond.tri.Polygon;
 		return Std.int((idx.length >> 1) / 3);
 	}
 	
-	//TODO:implement setStageSize
-	public function setStageSize(w:Int, h:Int) {
-		//stageWidth = w;
-		//stageHeight = h;
-	}
-	
-	
 	private function disposeBuffers() {
 		if( ibuf != null ) { ibuf.dispose(); ibuf = null; }
 		if( vbuf != null ) { vbuf.dispose(); vbuf = null; }
@@ -112,9 +107,11 @@ import mikedotalmond.tri.Polygon;
 			for (poly in polygons) {
 				poly.dispose();
 			}
+			polygons.fixed  = false;
 			polygons.length = 0;
 			polygons = null;
 		}
+		
 		nextVBufferIndex = nextIBufferIndex = vCount = 0;
 	}
 }

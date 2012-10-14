@@ -19,6 +19,7 @@ import mikedotalmond.tri.geom.Vector;
 	public var scale(default, set_scale):Float = 1;
 	
 	public var position(get_position, never):Vector;
+	public var centroid(default, null):Vector;
 	
 	public var x(get_x, set_x):Float;
 	public var y(get_y, set_y):Float;
@@ -29,12 +30,14 @@ import mikedotalmond.tri.geom.Vector;
 	/**
 	 * 
 	 * @param	edgeVertices
-	 * @param	?innerRGB
-	 * @param	?outerRGB
+	 * @param	centroid
+	 * @param	innerRGB
+	 * @param	outerRGB
+	 * @param	manager
 	 */
-	public function new(edgeVertices:flash.Vector<Vector>, ?innerRGB:UInt, ?outerRGB:UInt, manager:PolygonManager) {
+	public function new(edgeVertices:flash.Vector<Vector>, centroid:Vector, innerRGB:UInt, outerRGB:UInt, manager:PolygonManager) {
 		
-		edgeVertices.unshift(new Vector()); // add the centroid
+		edgeVertices.unshift(this.centroid = centroid);
 		
 		var idxStart:Int = manager.vCount;
 		
@@ -74,33 +77,33 @@ import mikedotalmond.tri.geom.Vector;
 	 * @return
 	 */
 	
-	private function get_position():Vector { return points[0]; }
+	private function get_position():Vector { return centroid; }
 	public function setPosition(x:Float=0, y:Float=0):Void {
-		var reference = points[0];
+		var reference = centroid;
 		var tx = x - reference.x;
 		var ty = y - reference.y;
 		inlineTranslate(tx, ty, 0);
 	}
 	
 	
-	private function get_x():Float { return  points[0].x; }
+	private function get_x():Float { return  centroid.x; }
 	private function set_x(value:Float):Float { 
-		inlineTranslate(x - points[0].x, 0, 0);
-		return points[0].x;
+		inlineTranslate(x - centroid.x, 0, 0);
+		return centroid.x;
 	}
 	
 	
-	private function get_y():Float { return  points[0].y; }
+	private function get_y():Float { return  centroid.y; }
 	private function set_y(value:Float):Float { 
-		inlineTranslate(y - points[0].y, 0, 0);
-		return points[0].y;
+		inlineTranslate(y - centroid.y, 0, 0);
+		return centroid.y;
 	}
 	
 	
 	private function set_scale(value:Float):Float {
 		var ds = value / scale;
-		var cX = points[0].x;
-		var cY = points[0].y;
+		var cX = centroid.x;
+		var cY = centroid.y;
 		for(i in 1...points.length){
 			var v = points[i];
 			v.x = Utils.lerp(v.x, cX, ds);
@@ -122,9 +125,10 @@ import mikedotalmond.tri.geom.Vector;
 	 * @param	angleDelta
 	 */
 	private inline function rotatePoints(angleDelta:Float) {
-		var cX:Float = points[0].x;
-		var cY:Float = points[0].y;
-		for (i in 1...points.length) {
+		var cX:Float = centroid.x;
+		var cY:Float = centroid.y;
+		var n = points.length;
+		for (i in 1...n) {
 			Utils.rotateVector2D(cX, cY, points[i], angleDelta);
 		}
 	}
@@ -145,6 +149,6 @@ import mikedotalmond.tri.geom.Vector;
 		
 		for (i in 0...edgeCount) v.unshift(new Vector(Math.sin(Math.PI + i * t), Math.cos(Math.PI + i * t)));
 		
-		return new RadialPolygon(v, innerRGB, outerRGB, manager);
+		return new RadialPolygon(v, new Vector(), innerRGB, outerRGB, manager);
 	}
 }

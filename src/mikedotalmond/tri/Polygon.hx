@@ -29,6 +29,7 @@ class Polygon {
 	private var manager			:PolygonManager;
 	
 	public function new( points:flash.Vector<Vector>, manager:PolygonManager) {
+		
 		this.points 	= points;
 		this.manager 	= manager;
 		points.fixed 	= true;
@@ -81,18 +82,23 @@ class Polygon {
 	}
 	
 	public function translate( dx, dy, dz ) {
-		inlineTranslate(dx,dy,dz);
+		inlineTranslate(dx, dy, dz);
 	}
 	
 	public function dispose():Void {
+		
 		if (points != null) {
+			points.fixed = false;
 			points.length = 0;
 			points = null;
 		}
+		
 		if (vertexColours != null) {
+			vertexColours.fixed = false;
 			vertexColours.length = 0;
 			vertexColours = null;
 		}
+		
 		manager = null;
 	}
 	
@@ -100,5 +106,4 @@ class Polygon {
 	public function addVColours() {
 		throw "Not implemented for this polygon";
 	}
-
 }
