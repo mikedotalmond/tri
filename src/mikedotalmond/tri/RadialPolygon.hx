@@ -109,19 +109,34 @@ import mikedotalmond.tri.geom.Vector;
 	}
 	
 	private function set_scale(value:Float):Float {
-		var x = centroidX();
-		var y = centroidY();
 		var change = value / _scale;
-		_scaleBy(change, x, y);
+		_scaleBy(change);
 		return _scale = value;
 	}
 	
-	public function scaleBy(value:Float, x:Float, y:Float) {
-		_scaleBy(value, x, y);
+	public function scaleAbout(value:Float, x:Float, y:Float) {
+		var change = value / _scale;
+		
+		var tx, ty;
+		var i = vbufIndex + 28; // skip vertex 0
+		var pts = points;
+		var p;
+		for (j in 1...vertexCount) {
+			p 	= pts[j];
+			tx 	= Utils.lerp(p.x, x, value);
+			ty 	= Utils.lerp(p.y, y, value);
+			
+			Memory.setFloat(i, tx); i += 4; //x
+			Memory.setFloat(i, ty); i += 24; //y + skip z
+		}
+		
+		_scale = value;
 	}
 	
-	private inline function _scaleBy(value:Float, x:Float, y:Float) {
+	private inline function _scaleBy(value:Float) {
 		
+		var x = centroidX();
+		var y = centroidY();
 		var tx, ty;
 		var i = vbufIndex + 28; // skip vertex 0
 		

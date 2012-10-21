@@ -7,6 +7,7 @@ import flash.display3D.Context3DBlendFactor;
 import flash.display3D.Context3DCompareMode;
 import flash.display3D.Context3DTriangleFace;
 import flash.events.Event;
+import flash.events.FullScreenEvent;
 import flash.geom.Matrix3D;
 import flash.Lib;
 
@@ -63,6 +64,7 @@ import mikedotalmond.tri.shaders.VertexWaveShader;
 		setup3D();
 		
 		stage.addEventListener(Event.RESIZE, onResize);
+		stage.addEventListener(FullScreenEvent.FULL_SCREEN, onResize);
 		
 		onResize(null);
 		

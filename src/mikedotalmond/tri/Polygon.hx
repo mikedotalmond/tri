@@ -26,12 +26,12 @@ class Polygon {
 	public var next				:Polygon = null;
 	
 	private var vertexColours 	:flash.Vector<Float4>;
+	private var points		 	:flash.Vector<Point>;
 	
 	private var manager			:PolygonManager;
 
 	public function new(points:flash.Vector<Point>, manager:PolygonManager) {
 		
-		points.fixed 	= true;
 		this.manager 	= manager;
 		vIndex 			= manager.vCount;
 		vbufIndex 		= manager.nextVBufferIndex;
@@ -45,6 +45,8 @@ class Polygon {
 	
 	// allocate the vertex buffer bytearray and set initial positipon values
 	private function prepareVertexBuffer(points:flash.Vector<Point>) {
+		points.fixed 	= true;
+		
 		var tbuf:ByteArray = manager.buf;
 		var i = vbufIndex;
 		tbuf.position = i;
@@ -61,7 +63,7 @@ class Polygon {
 			tbuf.writeFloat(1);//a
 		}
 		
-		points = null;
+		this.points = points;
 	}
 	
 	public function updateVertexColours() {
@@ -88,6 +90,12 @@ class Polygon {
 			vertexColours.fixed = false;
 			vertexColours.length = 0;
 			vertexColours = null;
+		}
+		
+		if (points != null) {
+			points.fixed = false;
+			points.length = 0;
+			points = null;
 		}
 		
 		manager = null;
