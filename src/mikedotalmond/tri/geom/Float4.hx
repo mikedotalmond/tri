@@ -25,4 +25,15 @@ package mikedotalmond.tri.geom;
 		this.z = z;
 		this.w = w;
 	}
+	
+	public inline function setFrom(source:Float4) {
+		this.x = source.x;
+		this.y = source.y;
+		this.z = source.z;
+		this.w = source.w;
+	}
+	
+	public inline function setInt(colour:Int) {
+		Utils.rgbIntToFloat4(colour, this);
+	}
 }

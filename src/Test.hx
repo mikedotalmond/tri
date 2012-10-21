@@ -32,8 +32,6 @@ import net.hires.debug.Stats;
 		scene = new Scene();
 		scene.createPolygons.add(createPolygons);
 		scene.ready.add(sceneReady);
-		scene.init();
-		
 	}
 	
 	private function sceneReady() {
@@ -53,9 +51,10 @@ import net.hires.debug.Stats;
 		var pm = scene.polyManager;
 		for (i in 0...46) {
 			for (j in 0...25) {
-				var poly = RadialPolygon.regularPolygon(15 + (i * j % 12) % 15, 0, 0x8032fa, pm);
-				poly.setPosition( -5.625 + i/4, -3 + j/4);
-				poly.scale = 0.1;
+				var x, y;
+				x 		= -5.625 + i / 4;
+				y 		= -3 + j / 4;
+				RadialPolygon.regularPolygon(14 + (i * j % 12) % 15, 0, 0x8032fa, pm, x, y, 0.1);
 			}
 		}
 		
@@ -79,17 +78,15 @@ import net.hires.debug.Stats;
 		var poly:RadialPolygon 	= cast pm.polyZero; // get the first poly in the list
 		
 		while (poly != null) {
-			var pid = 0.00021 * (poly.index % 7);
+			var pid = 0.00022 * (poly.index % 7);
+			
+			poly.outerColour.z += (Math.random() * 0.5 - poly.outerColour.z) * 0.5;
+			poly.innerColour.set(Math.random(), Math.random(), Math.random(), 0.5);
+			poly.updateVertexColours();
+			
 			//poly.rotation = Math.cos(t + poly.index % 13);
-			poly.translate(Math.sin(t)*pid,Math.cos(t/2)*pid,0);// = Math.cos(t + poly.index % 13);
-			poly.outerColour.x += (Math.random() * 0.6 - poly.outerColour.x) * 0.5;
-			poly.outerColour.y += (Math.random() * 0.6 - poly.outerColour.y) * 0.5;
-			//poly.outerColour.z += (Math.random() * 0.5 - poly.outerColour.z) * 0.5;
-			//poly.innerColour.set(Math.random(), Math.random(), Math.random(), 0);
-			poly.scale = 0.08 + Math.sin(t*(poly.x+poly.y)) * 0.01;// * Math.cos(t - 1 / t * t);
-
-			poly.updateVertexBuffer();
-			// if a poly is updated and you want to see that change (position, scale, rotation, colour) you have to update the vertex buffer
+			poly.translate(Math.sin(t)*pid,Math.cos(t/2)*pid);// = Math.cos(t + poly.index % 13);
+			poly.scale = 0.7 + Math.sin(t*poly.index%6 + 2 * pid % (poly.x + poly.y)) * 0.25;// * Math.cos(t - 1 / t * t);
 			
 			poly = cast poly.next;
 		}

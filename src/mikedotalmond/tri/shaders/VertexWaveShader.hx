@@ -30,7 +30,7 @@ package mikedotalmond.tri.shaders;
 			var p 		= pos.xyzw;
 			
 			var phase   = (p.x * fx + p.y * fy);			
-			p.z 		-= amplitude * sin(time + phase);
+			p.z 		+= amplitude * sin(time + phase);
 			
 			out 		= p.xyzw * mpos * mproj;
 			
@@ -41,6 +41,6 @@ package mikedotalmond.tri.shaders;
 		function fragment() {
 			out = tcolour;
 		}
+		
 	};
-
 }

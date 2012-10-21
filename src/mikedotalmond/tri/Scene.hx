@@ -8,13 +8,13 @@ import flash.display3D.Context3DCompareMode;
 import flash.display3D.Context3DTriangleFace;
 import flash.events.Event;
 import flash.geom.Matrix3D;
+import flash.Lib;
 
 import hxs.Signal;
 
 import mikedotalmond.tri.geom.Vector;
 import mikedotalmond.tri.shaders.VertexWaveShader;
 
-import net.hires.debug.Stats;
 
 /**
  * ...
@@ -27,10 +27,7 @@ import net.hires.debug.Stats;
 	private var stage3D 		:Stage3D;
 	private var context3D		:Context3D;
 	private var shader 			:VertexWaveShader;
-	private var camera 			:Camera;
 	private var time			:Float;
-	private var positionMatrix	:Matrix3D;
-	private var stats			:Stats;
 	
 	private var stageWidth		:Int;
 	private var stageHeight		:Int;
@@ -42,6 +39,8 @@ import net.hires.debug.Stats;
 	public var ready(default, null):Signal;
 	
 	public var createPolygons(default, null):Signal;
+	public var camera(default, null)		:Camera;
+	public var positionMatrix(default, null):Matrix3D;
 	
 	
 	public function new() {
@@ -56,21 +55,18 @@ import net.hires.debug.Stats;
 		stage3D 		= stage.stage3Ds[0];
 		
 		stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextReady );
-	}
-	
-	public function init() {
 		stage3D.requestContext3D();
 	}
-
+	
 	function onContextReady( _ ) {
 	
 		setup3D();
 		
 		stage.addEventListener(Event.RESIZE, onResize);
-		stage.addChild(stats = new Stats());
 		
 		onResize(null);
 		
+		createScene();
 	}
 	
 	private function setup3D() {
@@ -81,8 +77,10 @@ import net.hires.debug.Stats;
 		positionMatrix 	= new Matrix3D();
 		camera 			= new Camera(60, 1, 1, 0.02, 15);
 		camera.up		= new Vector(0, 1, 0);
-		camera.pos.z 	= 9;
-		
+		camera.pos.z 	= 10;
+	}
+	
+	private function initBackBuffer() {
 		#if debug 
 		context3D.enableErrorChecking = true;
 		context3D.configureBackBuffer( stage.stageWidth, stage.stageHeight, 0, false );
@@ -90,8 +88,6 @@ import net.hires.debug.Stats;
 		context3D.enableErrorChecking = false; 
 		context3D.configureBackBuffer( stage.stageWidth, stage.stageHeight, 4, false );//antialias=4
 		#end
-		
-		createScene();
 	}
 	
 	public function createScene() {
@@ -101,6 +97,10 @@ import net.hires.debug.Stats;
 		createPolygons.dispatch();
 		
 		polyManager.alloc(context3D);
+		
+		Lib.trace("vertices: " + polyManager.vCount);
+		Lib.trace("triangles: " + polyManager.triCount());
+		Lib.trace("polygons: " + polyManager.polygons.length);
 		
 		ready.dispatch();
 	}
@@ -114,9 +114,8 @@ import net.hires.debug.Stats;
 		halfStageWidth 	= w >> 1;
 		halfStageHeight = h >> 1;
 		
-		// update ui
-		stats.x = w - stats.width;
-		stats.y = h - stats.height;
+		// set the backbuffer size
+		initBackBuffer();
 		
 		// update scene
 		camera.ratio = w / h;
@@ -127,25 +126,25 @@ import net.hires.debug.Stats;
 	 * Call every frame
 	 * @param	?updateAllBuffers
 	 */
-	public function update(delta:Float, ?updateAllBuffers:Bool=false) {
+	public function update(delta:Float) {
 		if( context3D == null ) return;
 		
 		context3D.clear(0, 0, 0, 1);
 		
 		// allow alpha blending
 		context3D.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
+		
 		// no depth test for now...
-		context3D.setDepthTest( false, Context3DCompareMode.LESS_EQUAL );
+		context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL );
+		
 		// don't draw back-faces
 		context3D.setCulling(Context3DTriangleFace.BACK);
 		
 		var pm = polyManager;
 		
-		if (updateAllBuffers) pm.updateAllBuffers();
 		pm.uploadAll();
 		
-		//positionMatrix.identity();
-		//positionMatrix.appendRotation(t * 10, flash.geom.Vector3D.Z_AXIS);
+		//scene.positionMatrix.appendRotation(time * 10, flash.geom.Vector3D.Z_AXIS);
 		
 		var project = camera.m.toMatrix();
 		
@@ -161,9 +160,9 @@ import net.hires.debug.Stats;
 			{	mpos		: positionMatrix, 
 				mproj		: project, 
 				time		: time,
-				fx			: mouseX * 2, 
-				fy			: mouseY * 2, 
-				amplitude	: 0.2 + mouseY
+				fx			: mouseX*2, 
+				fy			: mouseY*2, 
+				amplitude	: 0.2+mouseY
 			},
 			{  }
 		);

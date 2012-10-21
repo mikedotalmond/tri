@@ -72,7 +72,7 @@ import mikedotalmond.tri.geom.Vector;
 		pos.y += p.y;
 		pos.z += p.z;
 	}
-				
+	
 	function makeFrustumMatrix() {
 		var scale = zoom / Math.tan(fov * Math.PI / 360.0);
 		var m = new Matrix();

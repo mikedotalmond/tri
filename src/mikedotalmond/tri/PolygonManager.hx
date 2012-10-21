@@ -65,24 +65,7 @@ import mikedotalmond.tri.Polygon;
 		
 		vbuf = c.createVertexBuffer(vCount, floatsPerVertex);
 		
-		prepareAllbuffers(); //fill the vertex bytearray
 		Memory.select(buf);  // select the vertex bytearray for fast memory access. All buffer updates are set using Memory.setFloat
-	}
-	
-	public function prepareAllbuffers() {
-		var poly = polygons[0];
-		while (poly != null) {
-			poly.prepareVertexBuffer();
-			poly = poly.next;
-		}
-	}
-	
-	public function updateAllBuffers() {
-		var poly = polygons[0];
-		while (poly != null) {
-			poly.updateVertexBuffer();
-			poly = poly.next;
-		}
 	}
 	
 	public inline function uploadAll() {

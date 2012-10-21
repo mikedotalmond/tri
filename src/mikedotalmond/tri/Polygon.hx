@@ -1,9 +1,11 @@
 package mikedotalmond.tri;
 
+import mikedotalmond.tri.geom.Point;
 import flash.display3D.Context3D;
 import flash.display3D.IndexBuffer3D;
 import flash.display3D.VertexBuffer3D;
 import flash.Memory;
+
 import mikedotalmond.tri.Polygon;
 
 import flash.utils.ByteArray;
@@ -21,77 +23,66 @@ class Polygon {
 	public var vbufIndex(default, null):Int;
 	public var vIndex(default, null):Int;
 	
-	private var points 			:flash.Vector<Vector>;
-	private var vertexColours 	:flash.Vector<Float4>;
-	
 	public var next				:Polygon = null;
 	
-	private var manager			:PolygonManager;
+	private var vertexColours 	:flash.Vector<Float4>;
 	
-	public function new( points:flash.Vector<Vector>, manager:PolygonManager) {
+	private var manager			:PolygonManager;
+
+	public function new(points:flash.Vector<Point>, manager:PolygonManager) {
 		
-		this.points 	= points;
-		this.manager 	= manager;
 		points.fixed 	= true;
+		this.manager 	= manager;
 		vIndex 			= manager.vCount;
 		vbufIndex 		= manager.nextVBufferIndex;
 		ibufIndex 		= manager.nextIBufferIndex;
 		vertexCount		= points.length;
 		
+		prepareVertexBuffer(points);
+		
 		manager.add(this);
 	}
 	
-	public function prepareVertexBuffer() {
+	// allocate the vertex buffer bytearray and set initial positipon values
+	private function prepareVertexBuffer(points:flash.Vector<Point>) {
 		var tbuf:ByteArray = manager.buf;
 		var i = vbufIndex;
 		tbuf.position = i;
 		var n = vertexCount;
 		for ( k in 0...n) {
-			tbuf.writeFloat(.0);
-			tbuf.writeFloat(.0);
-			tbuf.writeFloat(.0);
-			tbuf.writeFloat(.0);
-			tbuf.writeFloat(.0);
-			tbuf.writeFloat(.0);
-			tbuf.writeFloat(.0);
-		}
-	}
-	
-	public function updateVertexBuffer() {
-		var i = vbufIndex;
-		var n = vertexCount;
-		for ( k in 0...n ) {
 			var p = points[k];
-			Memory.setFloat(i, p.x); i += 4;
-			Memory.setFloat(i, p.y); i += 4;
-			Memory.setFloat(i, p.z); i += 4;
-			var c = vertexColours[k];
-			Memory.setFloat(i, c.x); i += 4;
-			Memory.setFloat(i, c.y); i += 4;
-			Memory.setFloat(i, c.z); i += 4;
-			Memory.setFloat(i, c.w); i += 4;
+			tbuf.writeFloat(p.x);
+			tbuf.writeFloat(p.y);
+			tbuf.writeFloat(.0); //z
+			//
+			tbuf.writeFloat(.5);//r
+			tbuf.writeFloat(.5);//g
+			tbuf.writeFloat(.5);//b
+			tbuf.writeFloat(1);//a
 		}
+		
+		points = null;
 	}
-
-	private inline function inlineTranslate( dx, dy, dz ) {
-		for( p in points ) {
-			p.x += dx;
-			p.y += dy;
-			p.z += dz;
+	
+	public function updateVertexColours() {
+		throw "Not implemented for this polygon";
+	}
+	
+	private inline function inlineTranslate( dx, dy ) {
+		var i = vbufIndex;
+		for ( j in 0...vertexCount ) {
+			var x = Memory.getFloat(i) + dx;
+			var y = Memory.getFloat(i + 4) + dy;
+			Memory.setFloat(i, x); i += 4;
+			Memory.setFloat(i, y); i += 24;
 		}
 	}
 	
-	public function translate( dx, dy, dz ) {
-		inlineTranslate(dx, dy, dz);
+	public function translate( dx, dy) {
+		inlineTranslate(dx, dy);
 	}
 	
 	public function dispose():Void {
-		
-		if (points != null) {
-			points.fixed = false;
-			points.length = 0;
-			points = null;
-		}
 		
 		if (vertexColours != null) {
 			vertexColours.fixed = false;
