@@ -54,7 +54,7 @@ import net.hires.debug.Stats;
 				var x, y;
 				x 		= -5.625 + i / 4;
 				y 		= -3 + j / 4;
-				RadialPolygon.regularPolygon(14 + (i * j % 12) % 15, 0, 0x8032fa, pm, x, y, 0.1);
+				RadialPolygon.regularPolygon(14 + (i * j % 12) % 15, 0, 0x0082ff, pm, x, y, 0.1);
 			}
 		}
 		
@@ -80,8 +80,8 @@ import net.hires.debug.Stats;
 		while (poly != null) {
 			var pid = 0.00022 * (poly.index % 7);
 			
-			poly.outerColour.z += (Math.random() * 0.5 - poly.outerColour.z) * 0.5;
-			poly.innerColour.set(Math.random(), Math.random(), Math.random(), 0.5);
+			poly.outerColour.z += (Math.random() - poly.outerColour.z) * 0.5;
+			//poly.innerColour.set(Math.random(), Math.random(), Math.random(), 0.5);
 			poly.updateVertexColours();
 			
 			//poly.rotation = Math.cos(t + poly.index % 13);
