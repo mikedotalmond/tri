@@ -30,7 +30,9 @@ package mikedotalmond.tri.shaders;
 			var p 		= pos.xyzw;
 			
 			var phase   = (p.x * fx + p.y * fy);			
-			p.z 		+= amplitude * sin(time + phase);
+			p.z 		+= amplitude * -sin(time + phase);
+			p.x 		+= amplitude * cos(time + phase);
+			p.y 		+= amplitude * sin(time + phase);
 			
 			out 		= p.xyzw * mpos * mproj;
 			

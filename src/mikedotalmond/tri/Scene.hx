@@ -83,13 +83,27 @@ import mikedotalmond.tri.shaders.VertexWaveShader;
 	}
 	
 	private function initBackBuffer() {
+		
+		var w, h;
+		
 		#if debug 
-		context3D.enableErrorChecking = true;
-		context3D.configureBackBuffer( stage.stageWidth, stage.stageHeight, 0, false );
+		var dbg = true;
+		var aa 	= 0;
 		#else 
-		context3D.enableErrorChecking = false; 
-		context3D.configureBackBuffer( stage.stageWidth, stage.stageHeight, 4, false );//antialias=4
+		var dbg = false;
+		var aa	= 4;
 		#end
+		
+		#if air
+		w = stage.fullScreenWidth;
+		h = stage.fullScreenHeight;
+		#else
+		w = stage.stageWidth;
+		h = stage.stageHeight;
+		#end
+		
+		context3D.enableErrorChecking = dbg;
+		context3D.configureBackBuffer( w, h, aa, false );
 	}
 	
 	public function createScene() {
@@ -155,7 +169,7 @@ import mikedotalmond.tri.shaders.VertexWaveShader;
 		
 		time += delta + delta * mouseX;
 		
-		camera.zoom = 1.05 + mouseX * 0.1;
+		//camera.zoom = 1.05 + mouseX * 0.1;
 		camera.update();
 		
 		shader.init(
@@ -164,7 +178,7 @@ import mikedotalmond.tri.shaders.VertexWaveShader;
 				time		: time,
 				fx			: mouseX*2, 
 				fy			: mouseY*2, 
-				amplitude	: 0.2+mouseY
+				amplitude	: mouseY*0.2
 			},
 			{  }
 		);
