@@ -2,17 +2,30 @@ package mikedotalmond.tri;
 
 import flash.display.Stage;
 import flash.display.Stage3D;
+import flash.display3D.textures.Texture;
+import hxs.Signal1;
+import hxs.Signal2;
+
+
 import flash.display3D.Context3D;
 import flash.display3D.Context3DBlendFactor;
 import flash.display3D.Context3DCompareMode;
+import flash.display3D.Context3DVertexBufferFormat;
+import flash.display3D.Context3DProgramType;
 import flash.display3D.Context3DTriangleFace;
+import flash.display3D.Context3DTextureFormat;
+import flash.display3D.VertexBuffer3D;
+import flash.display3D.IndexBuffer3D;
+
 import flash.events.Event;
 import flash.events.FullScreenEvent;
 import flash.geom.Matrix3D;
 import flash.Lib;
+import haxe.Log;
 
 import hxs.Signal;
 
+import mikedotalmond.tri.geom.Utils;
 import mikedotalmond.tri.geom.Vector;
 import mikedotalmond.tri.shaders.VertexWaveShader;
 
@@ -23,94 +36,59 @@ import mikedotalmond.tri.shaders.VertexWaveShader;
  */
 
 @:final class Scene {
-
-	private var stage 			:Stage;
-	private var stage3D 		:Stage3D;
-	private var context3D		:Context3D;
-	private var shader 			:VertexWaveShader;
-	private var time			:Float;
 	
-	private var stageWidth		:Int;
-	private var stageHeight		:Int;
-	private var halfStageWidth	:Int;
-	private var halfStageHeight	:Int;
-
+	private var stage 				:Stage;
+	private var stage3D 			:Stage3D;
+	private var context3D			:Context3D;
+	private var shader 				:VertexWaveShader;
+	private var time				:Float;
+	
 	public var polyManager(default, null):PolygonManager;
 	
 	public var ready(default, null):Signal;
 	
-	public var createPolygons(default, null):Signal;
+	public var createPolygons(default, null):Signal1<Scene>;
 	public var camera(default, null)		:Camera;
 	public var positionMatrix(default, null):Matrix3D;
 	
+	public var shaderX			:Float = .01;
+	public var shaderY			:Float = .01;
+	public var shaderAmplitude	:Float = 1;
 	
-	public function new() {
+	/**
+	 *
+	 * @param	stage3D - Stage3D instance with an initialised context3D
+	 */
+	public function new(sharedStage3D:SharedStage3DContext) {
 		
 		var current 	= flash.Lib.current;
 		
-		createPolygons 	= new Signal();
+		createPolygons 	= new Signal1<Scene>();
 		ready 			= new Signal();
 		
 		time 			= 0;
 		stage 			= current.stage;
-		stage3D 		= stage.stage3Ds[0];
 		
-		stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextReady );
-		stage3D.requestContext3D();
-	}
-	
-	function onContextReady( _ ) {
-	
-		setup3D();
+		this.stage3D 	= sharedStage3D.stage3D;
+		this.context3D 	= stage3D.context3D;
 		
-		stage.addEventListener(Event.RESIZE, onResize);
-		stage.addEventListener(FullScreenEvent.FULL_SCREEN, onResize);
-		
-		onResize(null);
-		
-		createScene();
-	}
-	
-	private function setup3D() {
-		
-		context3D 		= stage3D.context3D;
 		shader 			= new VertexWaveShader(context3D);
 		polyManager 	= new PolygonManager();
 		positionMatrix 	= new Matrix3D();
-		camera 			= new Camera(60, 1, 1, 0.02, 15);
+		camera 			= new Camera(60, 1, 1, 0.02, 80);
 		camera.up		= new Vector(0, 1, 0);
 		camera.pos.z 	= 10;
+		
+		sharedStage3D.resize.add(onResize);
+		sharedStage3D.requestDraw.add(update);
 	}
 	
-	private function initBackBuffer() {
-		
-		var w, h;
-		
-		#if debug 
-		var dbg = true;
-		var aa 	= 0;
-		#else 
-		var dbg = false;
-		var aa	= 4;
-		#end
-		
-		#if air
-		w = stage.fullScreenWidth;
-		h = stage.fullScreenHeight;
-		#else
-		w = stage.stageWidth;
-		h = stage.stageHeight;
-		#end
-		
-		context3D.enableErrorChecking = dbg;
-		context3D.configureBackBuffer( w, h, aa, false );
-	}
 	
 	public function createScene() {
 		
 		polyManager.init();
 		
-		createPolygons.dispatch();
+		createPolygons.dispatch(this);
 		
 		polyManager.alloc(context3D);
 		
@@ -121,18 +99,7 @@ import mikedotalmond.tri.shaders.VertexWaveShader;
 		ready.dispatch();
 	}
 	
-	private function onResize(e:Event):Void {
-		var w:Int = stage.stageWidth;
-		var h:Int = stage.stageHeight;
-		
-		stageWidth  	= w;
-		stageHeight 	= h;
-		halfStageWidth 	= w >> 1;
-		halfStageHeight = h >> 1;
-		
-		// set the backbuffer size
-		initBackBuffer();
-		
+	private function onResize(w:Int,h:Int):Void {
 		// update scene
 		camera.ratio = w / h;
 		camera.update();
@@ -142,49 +109,34 @@ import mikedotalmond.tri.shaders.VertexWaveShader;
 	 * Call every frame
 	 * @param	?updateAllBuffers
 	 */
-	public function update(delta:Float) {
-		if( context3D == null ) return;
-		
-		context3D.clear(0, 0, 0, 1);
-		
-		// allow alpha blending
-		context3D.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
-		
-		// no depth test for now...
-		context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL );
-		
-		// don't draw back-faces
-		context3D.setCulling(Context3DTriangleFace.BACK);
+	public function update(delta:Float, time:Float) {
 		
 		var pm = polyManager;
 		
 		pm.uploadAll();
 		
-		//scene.positionMatrix.appendRotation(time * 10, flash.geom.Vector3D.Z_AXIS);
-		
-		var project = camera.m.toMatrix();
-		
-		var mouseX:Float = (stage.mouseX / stageWidth) - 0.5;
-		var mouseY:Float = (stage.mouseY / stageHeight) - 0.5;
+		//positionMatrix.appendRotation(time * .10, flash.geom.Vector3D.Z_AXIS);
+		var mouseX:Float = (stage.mouseX / stage.stageWidth) - 0.5;
+		var mouseY:Float = (stage.mouseY / stage.stageHeight) - 0.5;
 		
 		time += delta + delta * mouseX;
 		
 		//camera.zoom = 1.05 + mouseX * 0.1;
 		camera.update();
 		
+		var project = camera.m.toMatrix();
+		
 		shader.init(
-			{	mpos		: positionMatrix, 
-				mproj		: project, 
+			{	mpos		: positionMatrix,
+				mproj		: project,
 				time		: time,
-				fx			: mouseX*2, 
-				fy			: mouseY*2, 
-				amplitude	: mouseY*0.2
+				fx			: mouseX * 2,
+				fy			: mouseY * 2,
+				amplitude	: mouseY * 0.2
 			},
 			{  }
 		);
 		
-		shader.bind(pm.vbuf);
-		context3D.drawTriangles(pm.ibuf);
-		context3D.present();
+		shader.draw(pm.vbuf, pm.ibuf); // bind->drawTriangles->unbind
 	}
 }

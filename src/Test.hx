@@ -6,6 +6,7 @@ import flash.display3D.Context3D;
 import flash.events.Event;
 import flash.events.MouseEvent;
 import flash.geom.Matrix3D;
+import mikedotalmond.tri.SharedStage3DContext;
 
 import flash.Lib;
 import haxe.Log;
@@ -24,30 +25,36 @@ import net.hires.debug.Stats;
 @:final class Test {
 
 	
-	private var scene	:Scene;
-	private var lastTime:Float = 0;
+	private var scene			:Scene;
+	private var lastTime		:Float = 0;
+	private var sharedContext	:SharedStage3DContext;
 
 	function new() {
-		
-		scene = new Scene();
+		sharedContext = new SharedStage3DContext(Lib.current.stage);
+		sharedContext.ready.addOnce(onContextReady);
+	}
+	
+	function onContextReady() {
+		scene = new Scene(sharedContext);
 		scene.createPolygons.add(createPolygons);
 		scene.ready.add(sceneReady);
+		scene.createScene();
 	}
 	
 	private function sceneReady() {
 		var current = flash.Lib.current;
 		current.stage.addEventListener(MouseEvent.DOUBLE_CLICK, rebuild);
-		current.addEventListener(Event.ENTER_FRAME, update);
+		current.stage.addEventListener(Event.ENTER_FRAME, update);
 	}
 	
 	private function rebuild(e:MouseEvent):Void {
 		var current = flash.Lib.current;
-		current.removeEventListener(Event.ENTER_FRAME, update);
+		current.stage.removeEventListener(Event.ENTER_FRAME, update);
 		current.stage.removeEventListener(MouseEvent.DOUBLE_CLICK, rebuild);
 		scene.createScene();
 	}
 	
-	private function createPolygons() {
+	private function createPolygons(scene:Scene) {
 		var pm = scene.polyManager;
 		for (i in 0...46) {
 			for (j in 0...25) {
@@ -59,18 +66,17 @@ import net.hires.debug.Stats;
 		}
 		
 		Log.trace("polys: " + pm.polygons.length);
-		Log.trace("tris: " + pm.triCount()); 
+		Log.trace("tris: " + pm.triCount());
 		
 		// nexus7 - scaling and colouring 1150 regular polys...
-		// 60fps, 12-13k triangles 
+		// 60fps, 12-13k triangles
 		// 60fps 18k tris after removing some XML GC in Stats.hx
 		// 60fps ~26k tris after switching to domain memory for the vertex buffer
 	}
 
-	function update(_) {
+	private function update(_) {
 		
-		var s 		= scene;
-		var pm		= s.polyManager;
+		var pm		= scene.polyManager;
 		var t 		= Timer.stamp();
 		var dt 		= t - lastTime;
 		lastTime 	= t;
@@ -91,7 +97,7 @@ import net.hires.debug.Stats;
 			poly = cast poly.next;
 		}
 		
-		s.update(dt * 5);
+		sharedContext.update(dt*5, t);
 	}
 
 	

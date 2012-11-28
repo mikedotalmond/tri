@@ -13,7 +13,21 @@ import mikedotalmond.tri.geom.Point;
 		return b + (a - b) * f;
 	}
 	
-	
+	/**
+	*   Get the next-highest power of two
+	*   @param v Value to get the next-highest power of two from
+	*   @return The next-highest power of two from the given value
+	*/
+	public static function nextPowerOfTwo(v:UInt): UInt {
+		v--;
+		v |= v >> 1;
+		v |= v >> 2;
+		v |= v >> 4;
+		v |= v >> 8;
+		v |= v >> 16;
+		v++;
+		return v;
+	}
 	
 	/**
 	 * rotate a 2d (x,y) position around another by a theta radians
