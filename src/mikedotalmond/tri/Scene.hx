@@ -5,6 +5,7 @@ import flash.display.Stage3D;
 import flash.display3D.textures.Texture;
 import hxs.Signal1;
 import hxs.Signal2;
+import mikedotalmond.tri.SharedStage3DContext;
 
 
 import flash.display3D.Context3D;
@@ -42,6 +43,7 @@ import mikedotalmond.tri.shaders.VertexWaveShader;
 	private var context3D			:Context3D;
 	private var shader 				:VertexWaveShader;
 	private var time				:Float;
+	private var sharedStage3D		:SharedStage3DContext;
 	
 	public var polyManager(default, null):PolygonManager;
 	
@@ -69,22 +71,51 @@ import mikedotalmond.tri.shaders.VertexWaveShader;
 		time 			= 0;
 		stage 			= current.stage;
 		
-		this.stage3D 	= sharedStage3D.stage3D;
-		this.context3D 	= stage3D.context3D;
-		
+		stage3D 		= sharedStage3D.stage3D;
+		context3D 		= stage3D.context3D;
 		shader 			= new VertexWaveShader(context3D);
+		
 		polyManager 	= new PolygonManager();
 		positionMatrix 	= new Matrix3D();
 		camera 			= new Camera(60, 1, 1, 0.02, 80);
 		camera.up		= new Vector(0, 1, 0);
 		camera.pos.z 	= 10;
 		
-		sharedStage3D.resize.add(onResize);
-		sharedStage3D.requestDraw.add(update);
+		this.sharedStage3D = sharedStage3D;
+		this.sharedStage3D.resize.add(onResize);
+		this.sharedStage3D.requestDraw.add(update);
 	}
 	
 	
-	public function createScene() {
+	public function dispose():Void {
+		createPolygons.removeAll();
+		createPolygons = null;
+		
+		sharedStage3D.resize.remove(onResize);
+		sharedStage3D.requestDraw.remove(update);
+		sharedStage3D = null;
+		
+		ready.removeAll();
+		ready = null;
+		
+		if (shader != null) {
+			shader.dispose();
+			shader = null;
+		}
+		
+		stage = null;
+		stage3D = null;
+		context3D = null;
+		
+		polyManager.dipose();
+		polyManager = null;
+		
+		positionMatrix = null;
+		camera = null;
+	}
+	
+	
+	public function createScene():Void {
 		
 		polyManager.init();
 		
@@ -97,6 +128,8 @@ import mikedotalmond.tri.shaders.VertexWaveShader;
 		Lib.trace("polygons: " + polyManager.polygons.length);
 		
 		ready.dispatch();
+		
+		onResize(sharedStage3D.stageWidth, sharedStage3D.stageHeight);
 	}
 	
 	private function onResize(w:Int,h:Int):Void {

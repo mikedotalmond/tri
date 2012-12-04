@@ -1,8 +1,11 @@
 
 import flash.display.Stage;
 import flash.display.Stage3D;
+import flash.display.StageScaleMode;
+import flash.display.StageAlign;
 import flash.display.StageQuality;
 import flash.display3D.Context3D;
+import flash.events.ErrorEvent;
 import flash.events.Event;
 import flash.events.MouseEvent;
 import flash.geom.Matrix3D;
@@ -22,8 +25,7 @@ import net.hires.debug.Stats;
 
 
 
-@:final class Test {
-
+@:final class Main {
 	
 	private var scene			:Scene;
 	private var lastTime		:Float = 0;
@@ -32,7 +34,17 @@ import net.hires.debug.Stats;
 	function new() {
 		sharedContext = new SharedStage3DContext(Lib.current.stage);
 		sharedContext.ready.addOnce(onContextReady);
+		sharedContext.contextLost.add(onContextLost);
+		sharedContext.contextError.add(onContextError);
+		
+		// Test context loss... causes context loss - 
+		// the entire scene is then disposed and restarted with a new Context3D
+		Lib.current.stage.doubleClickEnabled = true;
+		Lib.current.stage.addEventListener(MouseEvent.DOUBLE_CLICK, function(_) {
+			sharedContext.context3D.dispose();
+		});
 	}
+	
 	
 	function onContextReady() {
 		scene = new Scene(sharedContext);
@@ -41,20 +53,48 @@ import net.hires.debug.Stats;
 		scene.createScene();
 	}
 	
-	private function sceneReady() {
-		var current = flash.Lib.current;
-		current.stage.addEventListener(MouseEvent.DOUBLE_CLICK, rebuild);
-		current.stage.addEventListener(Event.ENTER_FRAME, update);
+	
+	private function onContextLost():Void {
+		Lib.current.stage.removeEventListener(Event.ENTER_FRAME, update);
+		scene.dispose();
+		scene = null;
+		sharedContext.ready.addOnce(onContextReady);
 	}
 	
+	
+	/**
+	 * There was an error creating a context3D - check wmode is set to 'direct'
+	 * @param	e
+	 */
+	private function onContextError(e:ErrorEvent) {
+		trace("onContextError");
+		trace(e.toString());
+	}
+	
+	
+	/**
+	 * triggered by the scene.ready signal when a scene has been created, buffers filled, and it's ready to render
+	 */
+	private function sceneReady() {
+		Lib.current.stage.addEventListener(Event.ENTER_FRAME, update);
+	}
+	
+	
+	/**
+	 * trigger scene rebuild
+	 * @param	e
+	 */
 	private function rebuild(e:MouseEvent):Void {
-		var current = flash.Lib.current;
-		current.stage.removeEventListener(Event.ENTER_FRAME, update);
-		current.stage.removeEventListener(MouseEvent.DOUBLE_CLICK, rebuild);
+		Lib.current.stage.removeEventListener(Event.ENTER_FRAME, update);
 		scene.createScene();
 	}
 	
-	private function createPolygons(scene:Scene) {
+	
+	/**
+	 * Called from the scene.createPolygons signal when the scene is ready to build the buffers
+	 * @param	scene - The calling scene
+	 */
+	private function createPolygons(scene:Scene):Void {
 		var pm = scene.polyManager;
 		for (i in 0...46) {
 			for (j in 0...25) {
@@ -74,7 +114,19 @@ import net.hires.debug.Stats;
 		// 60fps ~26k tris after switching to domain memory for the vertex buffer
 	}
 
+	
+	/**
+	 * frame-tick
+	 * @param	_
+	 */
 	private function update(_) {
+		
+		// do other processing....
+		
+		// ....
+		
+		
+		// update all the polygons
 		
 		var pm		= scene.polyManager;
 		var t 		= Timer.stamp();
@@ -84,7 +136,10 @@ import net.hires.debug.Stats;
 		var poly:RadialPolygon 	= cast pm.polyZero; // get the first poly in the list
 		
 		while (poly != null) {
+			
 			var pid = 0.00022 * (poly.index % 7);
+			
+			// update colour, position, and scale on each poly...
 			
 			poly.outerColour.z += (Math.random() - poly.outerColour.z) * 0.5;
 			//poly.innerColour.set(Math.random(), Math.random(), Math.random(), 0.5);
@@ -97,19 +152,27 @@ import net.hires.debug.Stats;
 			poly = cast poly.next;
 		}
 		
-		sharedContext.update(dt*5, t);
+		// call sharedContext.update(frameDelta, time) in your main enterframe function, it will...
+		// > clear the context
+		// > trigger the render for all observers of the sharedContext.requestDraw signal (the scene registers to this signal when created)
+		// > and present the new scene
+		sharedContext.update(dt * 5, t);
 	}
 
 	
 	
 	static function main() {
 		
-		Lib.current.stage.quality = StageQuality.LOW;
-		Lib.current.stage.showDefaultContextMenu = false;
-		Lib.current.stage.doubleClickEnabled = true;
+		var stage 		= Lib.current.stage;
+		stage.align 	= StageAlign.TOP_LEFT;
+		stage.scaleMode	= StageScaleMode.NO_SCALE;
+		stage.quality 	= StageQuality.LOW;
+		
+		stage.showDefaultContextMenu = false;
+		stage.doubleClickEnabled = true;
 		
 		haxe.Log.setColor(0xFF0000);
 		
-		var inst = new Test();
+		var inst = new Main();
 	}
 }

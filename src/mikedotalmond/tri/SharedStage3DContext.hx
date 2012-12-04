@@ -6,11 +6,14 @@ import flash.display3D.Context3DTriangleFace;
 import flash.display3D.Context3DCompareMode;
 import flash.display3D.Context3DBlendFactor;
 import flash.display3D.textures.RectangleTexture;
+import flash.errors.Error;
+import flash.events.ErrorEvent;
 import flash.events.Event;
 import flash.events.FullScreenEvent;
 import flash.geom.Rectangle;
 import flash.system.Capabilities;
 import hxs.Signal;
+import hxs.Signal1;
 import hxs.Signal2;
 
 /**
@@ -35,7 +38,10 @@ import hxs.Signal2;
 	public var stage(default,null):Stage;
 	public var stage3D(default,null):Stage3D;
 	public var context3D(default,null):Context3D;
+	public var contextReady(default, null):Bool;
+	public var contextError(default, null):Signal1<ErrorEvent>;
 	
+	public var contextLost(default, null):Signal;
 	public var ready(default,null):Signal;
 	public var resize(default, null):Signal2<Int,Int>;
 	public var requestDraw(default,null):Signal2<Float,Float>;
@@ -48,20 +54,49 @@ import hxs.Signal2;
 	
 	public var fullViewport(default, null):Rectangle;
 	
+	
 	public function new(stage:Stage, stage3D:Stage3D = null) {
 		
-		ready 		= new Signal();
-		resize 		= new Signal2<Int,Int>();
-		requestDraw = new Signal2<Float,Float>();
-		fullViewport = new Rectangle();
+		contextReady	= false;
+		ready 			= new Signal();
+		contextLost		= new Signal();
+		contextError	= new Signal1<ErrorEvent>();
+		resize 			= new Signal2<Int,Int>();
+		requestDraw 	= new Signal2<Float,Float>();
+		fullViewport 	= new Rectangle();
+		this.stage 	 	= stage;
 		
-		this.stage = stage;
-		this.stage3D = stage3D != null ? stage3D : stage.stage3Ds[0];
-		this.stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextReady, false, 1000);
-		this.stage3D.requestContext3D();
+		this.stage3D 	= (stage3D != null) ? stage3D : (stage.stage3Ds.length > 0 ? stage.stage3Ds[0] : null);
+		
+		if (this.stage3D == null) {
+			throw "No stage3Ds available.";
+		} else {
+			this.stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextReady, false, 1000);
+			this.stage3D.addEventListener(ErrorEvent.ERROR, onContextError, false, 1000);
+			this.stage3D.requestContext3D();
+		}
 	}
 	
-	private function onContextReady( _ ) {
+	private function onContextError(e:ErrorEvent):Void {
+		contextReady = false;
+		contextError.dispatch(e);
+	}
+	
+	private function onContextReady( e:Event ) {
+		
+		if (contextReady) { // the previsously initialised context was lost and is now available again... handle it.
+			
+			if (context3D.driverInfo.toLowerCase() == "disposed") {
+				trace("Context3D was disposed");
+			} else {
+				trace("Context3D was lost for reasons unknown...");
+				trace("driverInfo: " + context3D.driverInfo);
+			}
+			
+			context3D = null;
+			contextLost.dispatch();
+		}
+		
 		//trace("Context ready", "info");
 		//trace("CPUArchitecture:" + CPUArchitecture, "info");
 		
@@ -71,6 +106,8 @@ import hxs.Signal2;
 		stage.addEventListener(FullScreenEvent.FULL_SCREEN, onResize);
 		
 		onResize(null);
+		
+		contextReady = true;
 		
 		ready.dispatch();
 	}
@@ -96,7 +133,7 @@ import hxs.Signal2;
 		context3D.configureBackBuffer(stageWidth, stageHeight, AA, false);
 		
 		// allow alpha blending
-		 context3D.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
+		context3D.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
 		
 		// no depth test for now...
 		context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);

@@ -80,6 +80,11 @@ import mikedotalmond.tri.Polygon;
 		return Std.int((idx.length >> 1) / 3);
 	}
 	
+	public function dipose() {
+		disposePolygons();
+		disposeBuffers();
+	}
+	
 	private function disposeBuffers() {
 		if( ibuf != null ) { ibuf.dispose(); ibuf = null; }
 		if( vbuf != null ) { vbuf.dispose(); vbuf = null; }
