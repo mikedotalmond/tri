@@ -33,7 +33,12 @@ package mikedotalmond.tri.geom;
 		this.w = source.w;
 	}
 	
-	public inline function setInt(colour:Int) {
-		Utils.rgbIntToFloat4(colour, this);
+	public inline function setInt24(rgb:Int, alpha:Float = 1) {
+		Utils.rgbIntToFloat4(rgb, this);
+		this.w = alpha;
+	}
+	
+	public inline function setInt32(argb:Int) {
+		Utils.argbIntToFloat4(argb, this);
 	}
 }
