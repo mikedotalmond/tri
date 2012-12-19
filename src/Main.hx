@@ -101,12 +101,12 @@ import net.hires.debug.Stats;
 				var x, y;
 				x 		= -5.625 + i / 4;
 				y 		= -3 + j / 4;
-				RadialPolygon.regularPolygon(14 + (i * j % 12) % 15, 0, 0x0082ff, pm, x, y, 0.1);
+				RadialPolygon.regularPolygon(3 + (i * j % 7) % 9, 0, 0x0082ff, pm, x, y, 0.1);
 			}
 		}
 		
-		Log.trace("polys: " + pm.polygons.length);
-		Log.trace("tris: " + pm.triCount());
+		//Log.trace("polys: " + pm.polygons.length);
+		//Log.trace("tris: " + pm.triCount());
 		
 		// nexus7 - scaling and colouring 1150 regular polys...
 		// 60fps, 12-13k triangles

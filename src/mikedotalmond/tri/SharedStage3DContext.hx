@@ -95,7 +95,9 @@ import hxs.Signal2;
 		if (contextReady) { // the previsously initialised context was lost and is now available again... handle it.
 			
 			if (context3D.driverInfo.toLowerCase() == "disposed") {
+				#if debug
 				trace("Context3D was disposed");
+				#end
 			} else {
 				trace("Context3D was lost for reasons unknown...");
 				trace("driverInfo: " + context3D.driverInfo);
