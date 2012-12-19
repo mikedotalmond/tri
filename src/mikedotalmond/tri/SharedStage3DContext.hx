@@ -1,17 +1,21 @@
 package mikedotalmond.tri;
+
 import flash.display.Stage;
 import flash.display.Stage3D;
+
 import flash.display3D.Context3D;
 import flash.display3D.Context3DTriangleFace;
 import flash.display3D.Context3DCompareMode;
 import flash.display3D.Context3DBlendFactor;
-import flash.display3D.textures.RectangleTexture;
+import flash.display3D.Context3DRenderMode;
+
 import flash.errors.Error;
 import flash.events.ErrorEvent;
 import flash.events.Event;
 import flash.events.FullScreenEvent;
 import flash.geom.Rectangle;
 import flash.system.Capabilities;
+
 import hxs.Signal;
 import hxs.Signal1;
 import hxs.Signal2;
@@ -25,13 +29,16 @@ import hxs.Signal2;
 @:final class SharedStage3DContext {
 	
 	#if debug
-	public static inline var Debug  = true;
-	public static inline var AA 	= 0;
+		public static inline var Debug  = true;
+		public static inline var AA 	= 0;
 	#else
-	public static inline var Debug 	= false;
-	public static inline var AA		= 8;
+		public static inline var Debug 	= false;
+		#if air
+			public static inline var AA	= 0;
+		#else
+			public static inline var AA	= 8;
+		#end
 	#end
-	
 	public static var CPUArchitecture	:String = Capabilities.cpuArchitecture;
 	public static var isMobile			:Bool 	= CPUArchitecture == "ARM";
 	
@@ -55,7 +62,7 @@ import hxs.Signal2;
 	public var fullViewport(default, null):Rectangle;
 	
 	
-	public function new(stage:Stage, stage3D:Stage3D = null) {
+	public function new(stage:Stage, stage3D:Stage3D = null, renderMode:String="auto", profile:String="baseline") {
 		
 		contextReady	= false;
 		ready 			= new Signal();
@@ -64,16 +71,17 @@ import hxs.Signal2;
 		resize 			= new Signal2<Int,Int>();
 		requestDraw 	= new Signal2<Float,Float>();
 		fullViewport 	= new Rectangle();
-		this.stage 	 	= stage;
 		
+		this.stage 	 	= stage;
 		this.stage3D 	= (stage3D != null) ? stage3D : (stage.stage3Ds.length > 0 ? stage.stage3Ds[0] : null);
 		
 		if (this.stage3D == null) {
 			throw "No stage3Ds available.";
 		} else {
+			this.stage.addEventListener(Event.FULLSCREEN, onFullScreen, false, 1000);
 			this.stage3D.addEventListener(Event.CONTEXT3D_CREATE, onContextReady, false, 1000);
 			this.stage3D.addEventListener(ErrorEvent.ERROR, onContextError, false, 1000);
-			this.stage3D.requestContext3D();
+			this.stage3D.requestContext3D(renderMode, profile);
 		}
 	}
 	
@@ -94,11 +102,10 @@ import hxs.Signal2;
 			}
 			
 			context3D = null;
+			
+			// observe the contextLost signal to trigger disosal of your buffers before a new context is ready
 			contextLost.dispatch();
 		}
-		
-		//trace("Context ready", "info");
-		//trace("CPUArchitecture:" + CPUArchitecture, "info");
 		
 		context3D = stage3D.context3D;
 		
@@ -133,7 +140,9 @@ import hxs.Signal2;
 		context3D.configureBackBuffer(stageWidth, stageHeight, AA, false);
 		
 		// allow alpha blending
+		#if !air
 		context3D.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
+		#end
 		
 		// no depth test for now...
 		context3D.setDepthTest(false, Context3DCompareMode.LESS_EQUAL);
@@ -144,7 +153,10 @@ import hxs.Signal2;
 		if (e != null) resize.dispatch(stageWidth, stageHeight);
 	}
 	
-	
+	private function onFullScreen(e:Event):Void {
+		onResize(null);
+		resize.dispatch(stageWidth, stageHeight);
+	}
 	
 	public function update(delta:Float, time:Float) {
 		if (null == stage3D) return;
